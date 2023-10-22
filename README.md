@@ -1,0 +1,1 @@
+goose -dir db/migrations postgres "user=admin dbname=people_database password=admin sslmode=disable" up
