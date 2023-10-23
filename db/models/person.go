@@ -3,43 +3,16 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"junior-test/pkg/types"
 	"log"
 )
 
-// Модель для таблицы "people".
-type Person struct {
-	Name        string `json:"name"`
-	Surname     string `json:"surname"`
-	Patronymic  string `json:"patronymic"`
-	Age         int    `json:"age"`
-	Gender      string `json:"gender"`
-	Nationality string `json:"nationality"`
-}
-
-// Условия фильтрации записей.
-type PersonFilter struct {
-	Name        string
-	Surname     string
-	Patronymic  string
-	MinAge      int
-	MaxAge      int
-	Gender      string
-	Nationality string
-}
-
-// Параметры пагинации.
-type Pagination struct {
-	Page        int
-	PageSize    int
-	Initialized bool
-}
-
 type PersonRepository interface {
-	CreatePerson(person *Person) (int, error)
-	GetPersonByID(id int) (*Person, error)
-	UpdatePerson(id int, person *Person) error
+	CreatePerson(person *types.Person) (int, error)
+	GetPersonByID(id int) (*types.Person, error)
+	UpdatePerson(id int, person *types.Person) error
 	DeletePerson(id int) error
-	ListPeople(filter PersonFilter, pagination Pagination) ([]*Person, error)
+	ListPeople(filter types.PersonFilter, pagination types.Pagination) ([]*types.Person, error)
 }
 
 // SQLPersonRepository представляет реализацию интерфейса PersonRepository для работы с PostgreSQL.
@@ -53,7 +26,7 @@ func NewSQLPersonRepository(db *sql.DB) *SQLPersonRepository {
 }
 
 // Реализация методов интерфейса PersonRepository
-func (r *SQLPersonRepository) CreatePerson(person *Person) (int, error) {
+func (r *SQLPersonRepository) CreatePerson(person *types.Person) (int, error) {
 	query := "INSERT INTO people (name, surname, patronymic, age, gender, nationality) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id"
 	var id int
 	err := r.DB.QueryRow(query, person.Name, person.Surname, person.Patronymic, person.Age, person.Gender, person.Nationality).Scan(&id)
@@ -66,12 +39,12 @@ func (r *SQLPersonRepository) CreatePerson(person *Person) (int, error) {
 	return id, nil
 }
 
-func (r *SQLPersonRepository) GetPersonByID(id int) (*Person, error) {
+func (r *SQLPersonRepository) GetPersonByID(id int) (*types.Person, error) {
 	query := "SELECT name, surname, patronymic, age, gender, nationality FROM people WHERE id = $1"
 
 	row := r.DB.QueryRow(query, id)
 
-	person := &Person{}
+	person := &types.Person{}
 	err := row.Scan(&person.Name, &person.Surname, &person.Patronymic, &person.Age, &person.Gender, &person.Nationality)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -86,7 +59,7 @@ func (r *SQLPersonRepository) GetPersonByID(id int) (*Person, error) {
 	return person, nil
 }
 
-func (r *SQLPersonRepository) UpdatePerson(id int, person *Person) error {
+func (r *SQLPersonRepository) UpdatePerson(id int, person *types.Person) error {
 	query := "UPDATE people SET name = $1, surname = $2, patronymic = $3, age = $4, gender = $5, nationality = $6 WHERE id = $7"
 
 	_, err := r.DB.Exec(query, person.Name, person.Surname, person.Patronymic, person.Age, person.Gender, person.Nationality, id)
@@ -112,7 +85,7 @@ func (r *SQLPersonRepository) DeletePerson(id int) error {
 	return nil
 }
 
-func (r *SQLPersonRepository) ListPeople(filter PersonFilter, pagination Pagination) ([]*Person, error) {
+func (r *SQLPersonRepository) ListPeople(filter types.PersonFilter, pagination types.Pagination) ([]*types.Person, error) {
 	query := "SELECT name, surname, patronymic, age, gender, nationality FROM people WHERE 1=1"
 	var args []interface{}
 	paramCount := 1
@@ -167,9 +140,9 @@ func (r *SQLPersonRepository) ListPeople(filter PersonFilter, pagination Paginat
 	}
 	defer rows.Close()
 
-	var people []*Person
+	var people []*types.Person
 	for rows.Next() {
-		var p Person
+		var p types.Person
 		err := rows.Scan(&p.Name, &p.Surname, &p.Patronymic, &p.Age, &p.Gender, &p.Nationality)
 		if err != nil {
 			log.Printf("Error scanning person: %v", err)

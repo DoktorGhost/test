@@ -3,6 +3,7 @@ package db
 import (
 	"fmt"
 	"junior-test/db"
+	"junior-test/pkg/types"
 	"log"
 	"testing"
 
@@ -22,7 +23,7 @@ func TestMain(t *testing.T) {
 	defer db.CloseDB()
 
 	repo := NewSQLPersonRepository(datebase)
-	person := &Person{
+	person := &types.Person{
 		Name:    "Oleg",
 		Surname: "Samsonov",
 	}
@@ -47,7 +48,7 @@ func TestMain(t *testing.T) {
 
 	fmt.Println("!!!!!!!!!!!!!!!! Test GetPersonByID succes !!!!!!!!!!!!!!!!")
 
-	person3 := &Person{
+	person3 := &types.Person{
 		Name: "Olegsandr",
 	}
 
@@ -80,7 +81,7 @@ func TestMain(t *testing.T) {
 }
 
 func TestFiltr(t *testing.T) {
-	var persons = []*Person{
+	var persons = []*types.Person{
 		{
 			Name:    "Oleg",
 			Surname: "Samsonov",
@@ -144,11 +145,11 @@ func TestFiltr(t *testing.T) {
 		}
 	}()
 
-	var personFilter1 = PersonFilter{
+	var personFilter1 = types.PersonFilter{
 		Gender: "Female",
 	}
 
-	var personPagination1 = Pagination{
+	var personPagination1 = types.Pagination{
 		Initialized: false,
 	}
 
@@ -158,13 +159,13 @@ func TestFiltr(t *testing.T) {
 		t.Fatalf("The answer does not satisfy the request: %d != 1", len(filter1))
 	}
 
-	var personFilter2 = PersonFilter{
+	var personFilter2 = types.PersonFilter{
 		Gender: "Male",
 		MinAge: 20,
 		MaxAge: 29,
 	}
 
-	var personPagination2 = Pagination{
+	var personPagination2 = types.Pagination{
 		Initialized: false,
 	}
 
@@ -174,9 +175,9 @@ func TestFiltr(t *testing.T) {
 		t.Fatalf("The answer does not satisfy the request: %d != 3", len(filter2))
 	}
 
-	var personFilter3 = PersonFilter{}
+	var personFilter3 = types.PersonFilter{}
 
-	var personPagination3 = Pagination{
+	var personPagination3 = types.Pagination{
 		Page:        2,
 		PageSize:    2,
 		Initialized: true,
