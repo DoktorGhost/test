@@ -211,14 +211,103 @@ func (h *PeopleHandler) GetPersonByID(c *gin.Context) {
 	c.JSON(http.StatusOK, person)
 }
 
-func (h *PeopleHandler) UpdatePerson(w http.ResponseWriter, r *http.Request) {
-	//тут что-то будет
+func (h *PeopleHandler) UpdatePerson(c *gin.Context) {
+	// Извлекаем ID из URL.
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Извлекаем данные, которые необходимо обновить, из запроса.
+	var updatedPerson types.Person
+	if err := c.BindJSON(&updatedPerson); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to decode JSON request"})
+		return
+	}
+
+	// Вызываем функцию репозитория для обновления информации о человеке по ID.
+	err = h.Repository.UpdatePerson(id, &updatedPerson)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update person"})
+		return
+	}
+
+	// Отправляем успешный ответ.
+	c.JSON(http.StatusOK, gin.H{"message": "Person updated successfully"})
 }
 
-func (h *PeopleHandler) DeletePerson(w http.ResponseWriter, r *http.Request) {
-	//тут что-то будет
+func (h *PeopleHandler) DeletePerson(c *gin.Context) {
+	// Извлекаем ID из URL.
+	idStr := c.Param("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	// Вызываем функцию репозитория для удаления информации о человеке по ID.
+	err = h.Repository.DeletePerson(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete person"})
+		return
+	}
+
+	// Отправляем успешный ответ.
+	c.JSON(http.StatusOK, gin.H{"message": "Person deleted successfully"})
 }
 
-func (h *PeopleHandler) ListPeople(w http.ResponseWriter, r *http.Request) {
-	//тут что-то будет
+func (h *PeopleHandler) FilterListPeople(c *gin.Context) {
+	// Парсинг параметров запроса, таких как фильтр и параметры пагинации
+	var filter types.PersonFilter
+	var pagination types.Pagination
+
+	// Пример извлечения параметров фильтрации из URL-запроса
+	filter.Name = c.Query("name")
+	filter.Surname = c.Query("surname")
+	filter.Patronymic = c.Query("patronymic")
+	minAgeStr := c.Query("minAge")
+	maxAgeStr := c.Query("maxAge")
+	if minAgeStr != "" {
+		minAge, err := strconv.Atoi(minAgeStr)
+		if err == nil {
+			filter.MinAge = minAge
+		}
+	}
+	if maxAgeStr != "" {
+		maxAge, err := strconv.Atoi(maxAgeStr)
+		if err == nil {
+			filter.MaxAge = maxAge
+		}
+	}
+	filter.Gender = c.Query("gender")
+	filter.Nationality = c.Query("nationality")
+
+	// Пример извлечения параметров пагинации из URL-запроса
+	pageStr := c.DefaultQuery("page", "1")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil {
+		page = 1
+	}
+	pageSizeStr := c.DefaultQuery("pageSize", "10")
+	pageSize, err := strconv.Atoi(pageSizeStr)
+	if err != nil {
+		pageSize = 10
+	}
+	pagination = types.Pagination{
+		Page:        page,
+		PageSize:    pageSize,
+		Initialized: true,
+	}
+
+	// Вызов функции репозитория для получения списка людей
+	people, err := h.Repository.FilterListPeople(filter, pagination)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve people"})
+		return
+	}
+
+	// Отправка списка людей в формате JSON
+	c.JSON(http.StatusOK, people)
 }

@@ -45,4 +45,12 @@ func SetupPeopleRoutes(r *gin.Engine, handler *handlers.PeopleHandler) {
 		c.JSON(http.StatusOK, person)
 	})
 
+	r.PUT("/update/:id", handler.UpdatePerson)
+
+	// Маршрут для удаления человека по ID
+	r.DELETE("/delete/:id", handler.DeletePerson)
+
+	// Маршрут для получения списка людей с параметрами пагинации и фильтра
+	r.GET("/filter", handler.FilterListPeople)
+
 }

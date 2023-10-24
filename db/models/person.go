@@ -60,9 +60,53 @@ func (r *SQLPersonRepository) GetPersonByID(id int) (*types.Person, error) {
 }
 
 func (r *SQLPersonRepository) UpdatePerson(id int, person *types.Person) error {
-	query := "UPDATE people SET name = $1, surname = $2, patronymic = $3, age = $4, gender = $5, nationality = $6 WHERE id = $7"
+	// Собираем SQL-запрос динамически на основе измененных полей
+	query := "UPDATE people SET"
+	var params []interface{}
+	paramCount := 1
 
-	_, err := r.DB.Exec(query, person.Name, person.Surname, person.Patronymic, person.Age, person.Gender, person.Nationality, id)
+	if person.Name != "" {
+		query += fmt.Sprintf(" name = $%d,", paramCount)
+		params = append(params, person.Name)
+		paramCount++
+	}
+	if person.Surname != "" {
+		query += fmt.Sprintf(" surname = $%d,", paramCount)
+		params = append(params, person.Surname)
+		paramCount++
+	}
+	if person.Patronymic != "" {
+		query += fmt.Sprintf(" patronymic = $%d,", paramCount)
+		params = append(params, person.Patronymic)
+		paramCount++
+	}
+	if person.Age != 0 {
+		query += fmt.Sprintf(" age = $%d,", paramCount)
+		params = append(params, person.Age)
+		paramCount++
+	}
+	if person.Gender != "" {
+		query += fmt.Sprintf(" gender = $%d,", paramCount)
+		params = append(params, person.Gender)
+		paramCount++
+	}
+	if person.Nationality != "" {
+		query += fmt.Sprintf(" nationality = $%d,", paramCount)
+		params = append(params, person.Nationality)
+		paramCount++
+	}
+
+	// Удаляем последнюю запятую, если она есть
+	if len(query) > 0 && query[len(query)-1] == ',' {
+		query = query[:len(query)-1]
+	}
+
+	// Завершаем запрос
+	query += fmt.Sprintf(" WHERE id = $%d", paramCount)
+	params = append(params, id)
+
+	// Выполняем SQL-запрос
+	_, err := r.DB.Exec(query, params...)
 	if err != nil {
 		log.Printf("Error updating person with ID %d: %v", id, err)
 		return err
@@ -75,17 +119,23 @@ func (r *SQLPersonRepository) UpdatePerson(id int, person *types.Person) error {
 func (r *SQLPersonRepository) DeletePerson(id int) error {
 	query := "DELETE FROM people WHERE id = $1"
 
-	_, err := r.DB.Exec(query, id)
+	result, err := r.DB.Exec(query, id)
 	if err != nil {
 		log.Printf("Error deleting person with ID %d: %v", id, err)
 		return err
+	}
+
+	rowsAffected, _ := result.RowsAffected()
+	if rowsAffected == 0 {
+		log.Printf("Not ID %d", id)
+		return sql.ErrNoRows // Возвращаем ошибку sql.ErrNoRows, если ни одна запись не была удалена
 	}
 
 	log.Printf("Deleted person with ID %d", id)
 	return nil
 }
 
-func (r *SQLPersonRepository) ListPeople(filter types.PersonFilter, pagination types.Pagination) ([]*types.Person, error) {
+func (r *SQLPersonRepository) FilterListPeople(filter types.PersonFilter, pagination types.Pagination) ([]*types.Person, error) {
 	query := "SELECT name, surname, patronymic, age, gender, nationality FROM people WHERE 1=1"
 	var args []interface{}
 	paramCount := 1
