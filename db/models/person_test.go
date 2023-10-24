@@ -153,7 +153,7 @@ func TestFiltr(t *testing.T) {
 		Initialized: false,
 	}
 
-	filter1, _ := repo.ListPeople(personFilter1, personPagination1)
+	filter1, _ := repo.FilterListPeople(personFilter1, personPagination1)
 
 	if len(filter1) != 1 {
 		t.Fatalf("The answer does not satisfy the request: %d != 1", len(filter1))
@@ -169,7 +169,7 @@ func TestFiltr(t *testing.T) {
 		Initialized: false,
 	}
 
-	filter2, _ := repo.ListPeople(personFilter2, personPagination2)
+	filter2, _ := repo.FilterListPeople(personFilter2, personPagination2)
 
 	if len(filter2) != 3 {
 		t.Fatalf("The answer does not satisfy the request: %d != 3", len(filter2))
@@ -183,7 +183,7 @@ func TestFiltr(t *testing.T) {
 		Initialized: true,
 	}
 
-	filter3, _ := repo.ListPeople(personFilter3, personPagination3)
+	filter3, _ := repo.FilterListPeople(personFilter3, personPagination3)
 
 	if len(filter3) != 2 {
 		t.Fatalf("The answer does not satisfy the request: %d != 2", len(filter3))

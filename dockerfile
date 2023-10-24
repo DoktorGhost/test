@@ -1,11 +1,19 @@
-# Используем официальный образ PostgreSQL
-FROM postgres:latest
+# Используем официальный образ Golang
+FROM golang:1.19
 
-# Устанавливаем необходимые переменные окружения для PostgreSQL
-ENV POSTGRES_USER admin
-ENV POSTGRES_PASSWORD admin
-ENV POSTGRES_DB people_database
+# Устанавливаем переменную окружения API_PORT
+ENV API_PORT 8080
 
-# Экспонируем порт PostgreSQL (по умолчанию 5432)
-EXPOSE 5432
+# Копируем исходный код приложения в контейнер
+WORKDIR /app
+COPY . .
+COPY .env /app
 
+# Собираем приложение
+RUN go build -o main ./cmd
+
+# Экспонируем порт, на котором работает приложение
+EXPOSE 8080
+
+# Запускаем приложение
+CMD ["./main"]

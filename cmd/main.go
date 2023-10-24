@@ -13,7 +13,19 @@ import (
 )
 
 func main() {
-	if err := godotenv.Load("../.env"); err != nil {
+	var envFilePath string
+
+	if _, err := os.Stat("/app/.env"); err == nil {
+		// Файл .env найден внутри контейнера
+		envFilePath = "/app/.env"
+	} else if _, err := os.Stat("../.env"); err == nil {
+		// Файл .env найден в корне проекта (для локальной разработки)
+		envFilePath = "../.env"
+	} else {
+		log.Fatal("Error: .env file not found")
+	}
+
+	if err := godotenv.Load(envFilePath); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 	httpPort := os.Getenv("HTTP_PORT")
