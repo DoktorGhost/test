@@ -7,18 +7,20 @@ import (
 	"junior-test/pkg/types"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/gin-gonic/gin"
 )
 
 type PeopleHandler struct {
 	Repository *db.SQLPersonRepository
 }
 
-func (h *PeopleHandler) EnrichPerson(w http.ResponseWriter, r *http.Request) {
+func (h *PeopleHandler) EnrichPerson(c *gin.Context) {
 	var person types.Person
 
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(&person); err != nil {
-		http.Error(w, "Failed to decode JSON request", http.StatusBadRequest)
+	if err := c.BindJSON(&person); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to decode JSON request"})
 		return
 	}
 
@@ -81,6 +83,7 @@ func (h *PeopleHandler) EnrichPerson(w http.ResponseWriter, r *http.Request) {
 		log.Printf("Error: %v", Err)
 	}
 
+	c.JSON(http.StatusOK, gin.H{"message": "Person enriched and created"})
 }
 
 func (h *PeopleHandler) getAge(name string) (int, error) {
@@ -189,4 +192,33 @@ func (h *PeopleHandler) getNationality(name string) (string, error) {
 	}
 
 	return nationality, nil
+}
+
+func (h *PeopleHandler) GetPersonByID(c *gin.Context) {
+	id := c.Param("id")
+	idInt, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	person, err := h.Repository.GetPersonByID(idInt)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get person"})
+		return
+	}
+
+	c.JSON(http.StatusOK, person)
+}
+
+func (h *PeopleHandler) UpdatePerson(w http.ResponseWriter, r *http.Request) {
+	//тут что-то будет
+}
+
+func (h *PeopleHandler) DeletePerson(w http.ResponseWriter, r *http.Request) {
+	//тут что-то будет
+}
+
+func (h *PeopleHandler) ListPeople(w http.ResponseWriter, r *http.Request) {
+	//тут что-то будет
 }

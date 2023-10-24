@@ -7,6 +7,7 @@ import (
 	dbModels "junior-test/db/models"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/joho/godotenv"
 )
@@ -15,6 +16,7 @@ func main() {
 	if err := godotenv.Load("../.env"); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+	httpPort := os.Getenv("HTTP_PORT")
 	// Инициализация базы данных
 	database, err := db.InitDB()
 	if err != nil {
@@ -30,9 +32,8 @@ func main() {
 		Repository: repository,
 	}
 
-	// Установка маршрутов
-	routes.SetupPeopleRoutes(handler)
-
 	// Запуск сервера
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	routes.RunServer(handler)
+	log.Fatal(http.ListenAndServe(":"+httpPort, nil))
+
 }
