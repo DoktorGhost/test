@@ -10,9 +10,10 @@ services:
       - API_PORT=8080
       - HTTP_PORT=8080
     depends_on:
-      - localhost
+      - db
 
-  localhost:
+  db:
+    container_name: composepostgres
     build:
       context: .
       dockerfile: Dockerfile-postgresql
@@ -22,3 +23,4 @@ services:
       POSTGRES_DB: people_database
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin
+      DB_HOST: db

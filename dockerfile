@@ -7,7 +7,6 @@ ENV API_PORT 8080
 # Копируем исходный код приложения в контейнер
 WORKDIR /app
 COPY . .
-COPY .env /app
 
 # Собираем приложение
 RUN go build -o main ./cmd

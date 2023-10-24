@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"junior-test/api/handlers"
 	"junior-test/api/routes"
 	"junior-test/db"
@@ -8,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/joho/godotenv"
 )
@@ -28,13 +30,27 @@ func main() {
 	if err := godotenv.Load(envFilePath); err != nil {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
+
 	httpPort := os.Getenv("HTTP_PORT")
 	// Инициализация базы данных
-	database, err := db.InitDB()
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+	var database *sql.DB
+	var dbErr error
+
+	// Логика попыток повторного подключения к базе данных
+	for retries := 1; retries <= 5; retries++ {
+		database, dbErr = db.InitDB()
+		if dbErr == nil {
+			defer db.CloseDB() // Закрываем соединение при завершении работы
+			break
+		}
+
+		log.Printf("Failed to initialize database (attempt %d): %v", retries, dbErr)
+		time.Sleep(5 * time.Second)
 	}
-	defer db.CloseDB()
+
+	if dbErr != nil {
+		log.Fatal("Failed to initialize database after 5 attempts")
+	}
 
 	// Создание экземпляра репозитория
 	repository := dbModels.NewSQLPersonRepository(database)
