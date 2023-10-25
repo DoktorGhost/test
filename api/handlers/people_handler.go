@@ -261,48 +261,14 @@ func (h *PeopleHandler) DeletePerson(c *gin.Context) {
 func (h *PeopleHandler) FilterListPeople(c *gin.Context) {
 	// Парсинг параметров запроса, таких как фильтр и параметры пагинации
 	var filter types.PersonFilter
-	var pagination types.Pagination
 
-	// Пример извлечения параметров фильтрации из URL-запроса
-	filter.Name = c.Query("name")
-	filter.Surname = c.Query("surname")
-	filter.Patronymic = c.Query("patronymic")
-	minAgeStr := c.Query("minAge")
-	maxAgeStr := c.Query("maxAge")
-	if minAgeStr != "" {
-		minAge, err := strconv.Atoi(minAgeStr)
-		if err == nil {
-			filter.MinAge = minAge
-		}
-	}
-	if maxAgeStr != "" {
-		maxAge, err := strconv.Atoi(maxAgeStr)
-		if err == nil {
-			filter.MaxAge = maxAge
-		}
-	}
-	filter.Gender = c.Query("gender")
-	filter.Nationality = c.Query("nationality")
-
-	// Пример извлечения параметров пагинации из URL-запроса
-	pageStr := c.DefaultQuery("page", "1")
-	page, err := strconv.Atoi(pageStr)
-	if err != nil {
-		page = 1
-	}
-	pageSizeStr := c.DefaultQuery("pageSize", "10")
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil {
-		pageSize = 10
-	}
-	pagination = types.Pagination{
-		Page:        page,
-		PageSize:    pageSize,
-		Initialized: true,
+	if err := c.BindJSON(&filter); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Failed to decode JSON request"})
+		return
 	}
 
 	// Вызов функции репозитория для получения списка людей
-	people, err := h.Repository.FilterListPeople(filter, pagination)
+	people, err := h.Repository.FilterListPeople(filter)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve people"})
 		return

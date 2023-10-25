@@ -12,7 +12,7 @@ type PersonRepository interface {
 	GetPersonByID(id int) (*types.Person, error)
 	UpdatePerson(id int, person *types.Person) error
 	DeletePerson(id int) error
-	ListPeople(filter types.PersonFilter, pagination types.Pagination) ([]*types.Person, error)
+	ListPeople(filter types.PersonFilter) ([]*types.Person, error)
 }
 
 // SQLPersonRepository представляет реализацию интерфейса PersonRepository для работы с PostgreSQL.
@@ -60,6 +60,20 @@ func (r *SQLPersonRepository) GetPersonByID(id int) (*types.Person, error) {
 }
 
 func (r *SQLPersonRepository) UpdatePerson(id int, person *types.Person) error {
+
+	var count int
+	err := r.DB.QueryRow("SELECT COUNT(*) FROM people WHERE id = $1", id).Scan(&count)
+	if err != nil {
+		log.Printf("Error checking existence of person with ID %d: %v", id, err)
+		return err
+	}
+
+	if count == 0 {
+		// Записи с указанным ID не существует
+		log.Printf("Person with ID %d not found", id)
+		return fmt.Errorf("Person with ID %d not found", id)
+	}
+
 	// Собираем SQL-запрос динамически на основе измененных полей
 	query := "UPDATE people SET"
 	var params []interface{}
@@ -106,7 +120,7 @@ func (r *SQLPersonRepository) UpdatePerson(id int, person *types.Person) error {
 	params = append(params, id)
 
 	// Выполняем SQL-запрос
-	_, err := r.DB.Exec(query, params...)
+	_, err = r.DB.Exec(query, params...)
 	if err != nil {
 		log.Printf("Error updating person with ID %d: %v", id, err)
 		return err
@@ -135,23 +149,23 @@ func (r *SQLPersonRepository) DeletePerson(id int) error {
 	return nil
 }
 
-func (r *SQLPersonRepository) FilterListPeople(filter types.PersonFilter, pagination types.Pagination) ([]*types.Person, error) {
+func (r *SQLPersonRepository) FilterListPeople(filter types.PersonFilter) ([]*types.Person, error) {
 	query := "SELECT name, surname, patronymic, age, gender, nationality FROM people WHERE 1=1"
 	var args []interface{}
 	paramCount := 1
 
 	if filter.Name != "" {
-		query += fmt.Sprintf(" AND name = $%d", paramCount)
+		query += fmt.Sprintf(" AND LOWER(name) = LOWER($%d)", paramCount)
 		args = append(args, filter.Name)
 		paramCount++
 	}
 	if filter.Surname != "" {
-		query += fmt.Sprintf(" AND surname = $%d", paramCount)
+		query += fmt.Sprintf(" AND LOWER(surname) = LOWER($%d)", paramCount)
 		args = append(args, filter.Surname)
 		paramCount++
 	}
 	if filter.Patronymic != "" {
-		query += fmt.Sprintf(" AND patronymic = $%d", paramCount)
+		query += fmt.Sprintf(" AND LOWER(patronymic) = LOWER($%d)", paramCount)
 		args = append(args, filter.Patronymic)
 		paramCount++
 	}
@@ -171,14 +185,14 @@ func (r *SQLPersonRepository) FilterListPeople(filter types.PersonFilter, pagina
 		paramCount++
 	}
 	if filter.Nationality != "" {
-		query += fmt.Sprintf(" AND nationality = $%d", paramCount)
+		query += fmt.Sprintf(" AND LOWER(nationality) = LOWER($%d)", paramCount)
 		args = append(args, filter.Nationality)
 		paramCount++
 	}
 
-	if pagination.Initialized == true {
+	if filter.Page > 0 && filter.PageSize > 0 {
 		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", paramCount, (paramCount + 1))
-		args = append(args, pagination.PageSize, (pagination.Page-1)*pagination.PageSize)
+		args = append(args, filter.PageSize, (filter.Page-1)*filter.PageSize)
 	}
 
 	log.Printf("Executing query: %s, args: %v", query, args)

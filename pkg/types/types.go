@@ -12,20 +12,15 @@ type Person struct {
 
 // Условия фильтрации записей.
 type PersonFilter struct {
-	Name        string
-	Surname     string
-	Patronymic  string
-	MinAge      int
-	MaxAge      int
-	Gender      string
-	Nationality string
-}
-
-// Параметры пагинации.
-type Pagination struct {
-	Page        int
-	PageSize    int
-	Initialized bool
+	Name        string `json:"name"`
+	Surname     string `json:"surname"`
+	Patronymic  string `json:"patronymic"`
+	MinAge      int    `json:"minage"`
+	MaxAge      int    `json:"maxage"`
+	Gender      string `json:"gender"`
+	Nationality string `json:"nationality"`
+	Page        int    `json:"page"`
+	PageSize    int    `json:"pagesize"`
 }
 
 // Ответ от api ожидаемый возраст
